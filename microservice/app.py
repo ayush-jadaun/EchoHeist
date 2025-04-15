@@ -41,8 +41,13 @@ class RealtimeSpeechSentimentDetector:
         self.running = False
         self.audio_thread = None
         self.process_thread = None
+        self.client_count = 0
 
     def start(self):
+        if self.running:
+            print("Detection system already running.")
+            return
+            
         self.running = True        
         self.audio_thread = threading.Thread(target=self._simulate_audio_capture, daemon=True)
         self.audio_thread.start()
@@ -51,12 +56,34 @@ class RealtimeSpeechSentimentDetector:
         print("Realtime speech sentiment detection started.")
 
     def stop(self):
+        if not self.running:
+            return
+            
         self.running = False
         if self.audio_thread is not None:
             self.audio_thread.join(timeout=1.0)
+            self.audio_thread = None
         if self.process_thread is not None:
             self.process_thread.join(timeout=1.0)
+            self.process_thread = None
         print("Realtime speech sentiment detection stopped.")
+        
+    def add_client(self):
+        self.client_count += 1
+        print(f"Client connected. Total clients: {self.client_count}")
+        if self.client_count == 1:
+            # Start detection when first client connects
+            self.start()
+        # Send the latest prediction to the newly connected client if available
+        return self.latest_prediction
+        
+    def remove_client(self):
+        if self.client_count > 0:
+            self.client_count -= 1
+            print(f"Client disconnected. Total clients: {self.client_count}")
+            if self.client_count == 0:
+                # Stop detection when last client disconnects
+                self.stop()
 
     def _simulate_audio_capture(self):
         while self.running:
@@ -83,13 +110,8 @@ class RealtimeSpeechSentimentDetector:
             socketio.emit('sentiment_update', prediction)
             print(f"Simulated prediction: {prediction}")
 
+# Create detector instance but don't start it yet
 detector = RealtimeSpeechSentimentDetector()
-
-def start_detector():
-    detector.start()
-
-detector_thread = threading.Thread(target=start_detector, daemon=True)
-detector_thread.start()
 
 @app.route('/api/sentiment', methods=['GET'])
 def get_sentiment():
@@ -103,11 +125,18 @@ def get_sentiment():
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")
-    if detector.latest_prediction:
-        emit('sentiment_update', detector.latest_prediction)
+    latest_prediction = detector.add_client()
+    if latest_prediction:
+        emit('sentiment_update', latest_prediction)
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    detector.remove_client()
+    print("Client disconnected")
 
 if __name__ == '__main__':
     try:
+        print("Server starting. Speech sentiment detection will begin when clients connect.")
         socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     except KeyboardInterrupt:
         detector.stop()
