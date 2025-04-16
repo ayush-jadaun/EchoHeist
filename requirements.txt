@@ -1,0 +1,9 @@
+streamlit
+numpy
+librosa
+tensorflow
+matplotlib
+noisereduce
+soundfile
+sounddevice
+Pillow
