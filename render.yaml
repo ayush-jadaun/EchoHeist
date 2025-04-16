@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: echoheist
+    env: python
+    buildCommand: ./build.sh && pip install -r requirements.txt
+    startCommand: streamlit run app_final.py
+    plan: free
