@@ -1,10 +1,10 @@
- streamlit
- numpy
- librosa
- tensorflow
- matplotlib
- noisereduce
- soundfile
- sounddevice 
-
-
+streamlit
+numpy
+librosa
+tensorflow
+matplotlib
+noisereduce
+soundfile
+Pillow
+sounddevice
+pandas
