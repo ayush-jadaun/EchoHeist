@@ -5,6 +5,7 @@ tensorflow
 matplotlib
 noisereduce
 soundfile
-Pillow
 sounddevice
-pandas
+Pillow
+pipwin
+numpy
